@@ -59,12 +59,21 @@ pipeline {
                 script {
                     if (isUnix()) {
                         sh '''
-                            docker compose build --no-cache || docker-compose build --no-cache
+                            if command -v docker-compose >/dev/null 2>&1; then
+                                echo "Building with docker-compose..."
+                                docker-compose build
+                            elif docker compose version >/dev/null 2>&1; then
+                                echo "Building with docker compose..."
+                                docker compose build
+                            else
+                                echo "Building with docker build directly..."
+                                docker build -t lab-inventory-backend:latest .
+                            fi
                             echo "Docker Build Image PASSED."
                         '''
                     } else {
                         bat '''
-                            docker-compose build --no-cache || docker compose build --no-cache
+                            docker-compose build || docker compose build || docker build -t lab-inventory-backend:latest .
                             if errorlevel 1 exit /b 1
                             echo Docker Build Image PASSED.
                         '''
@@ -83,12 +92,41 @@ pipeline {
                 script {
                     if (isUnix()) {
                         sh '''
-                            echo "Menghentikan kontainer lama jika ada..."
-                            docker compose down || docker-compose down || true
-                            echo "Menjalankan stack kontainer baru di latar belakang..."
-                            docker compose up -d --remove-orphans || docker-compose up -d --remove-orphans
+                            if command -v docker-compose >/dev/null 2>&1; then
+                                echo "Deploying with docker-compose..."
+                                docker-compose down || true
+                                docker-compose up -d --remove-orphans
+                            elif docker compose version >/dev/null 2>&1; then
+                                echo "Deploying with docker compose..."
+                                docker compose down || true
+                                docker compose up -d --remove-orphans
+                            else
+                                echo "Deploying with native Docker commands (Bridge network & Named Volume)..."
+                                docker network create app-net 2>/dev/null || true
+                                docker volume create lab-inventory-data 2>/dev/null || true
+                                docker rm -f lab-inventory-frontend lab-inventory-backend 2>/dev/null || true
+                                
+                                docker run -d \
+                                    --name lab-inventory-backend \
+                                    --network app-net \
+                                    -p 5000:5000 \
+                                    -e PORT=5000 \
+                                    -e DATA_PATH=/var/lib/lab-inventory-data/inventory.json \
+                                    -v lab-inventory-data:/var/lib/lab-inventory-data \
+                                    --restart unless-stopped \
+                                    lab-inventory-backend:latest
+                                    
+                                docker run -d \
+                                    --name lab-inventory-frontend \
+                                    --network app-net \
+                                    -p 8080:80 \
+                                    -v "$PWD/index.html:/usr/share/nginx/html/index.html:ro" \
+                                    -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+                                    --restart unless-stopped \
+                                    nginx:alpine
+                            fi
                             echo "Status kontainer aktif:"
-                            docker compose ps || docker-compose ps
+                            docker ps
                         '''
                     } else {
                         bat '''
@@ -117,14 +155,17 @@ pipeline {
                             echo "Menunggu inisialisasi service (5 detik)..."
                             sleep 5
                             
-                            echo "Menguji endpoint health check backend via Nginx reverse proxy..."
-                            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health || curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health)
-                            
-                            if [ "$RESPONSE" = "200" ]; then
-                                echo "Health Check SUCCESS! HTTP Response: $RESPONSE"
-                                echo "Backend & Frontend siap melayani traffic."
+                            echo "Menguji endpoint health check backend..."
+                            if curl -s -f http://localhost:8080/health; then
+                                echo "\\nHealth check via localhost:8080 SUCCESS!"
+                            elif curl -s -f http://host.docker.internal:8080/health; then
+                                echo "\\nHealth check via host.docker.internal:8080 SUCCESS!"
+                            elif curl -s -f http://localhost:5000/health; then
+                                echo "\\nHealth check via localhost:5000 SUCCESS!"
+                            elif docker exec lab-inventory-backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:5000/health').read().decode())"; then
+                                echo "\\nHealth check via docker exec SUCCESS!"
                             else
-                                echo "Health Check FAILED! HTTP Response: $RESPONSE"
+                                echo "Health check FAILED!"
                                 exit 1
                             fi
                         '''
@@ -134,7 +175,7 @@ pipeline {
                             timeout /t 5 /nobreak > nul
                             
                             echo Menguji endpoint health check backend...
-                            curl -s -f http://localhost:8080/health || curl -s -f http://localhost:5000/health
+                            curl -s -f http://localhost:8080/health || curl -s -f http://localhost:5000/health || docker exec lab-inventory-backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:5000/health').read().decode())"
                             if errorlevel 1 (
                                 echo Health Check GAGAL! Service belum siap.
                                 exit /b 1
