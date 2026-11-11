@@ -107,7 +107,6 @@ INVENTARIS LAB PROJECT/
 ├── nginx.conf                    # Konfigurasi Nginx Web Server & Reverse Proxy
 ├── app.py                        # Kode sumber REST API Python Backend
 ├── test_unit.py                  # Unit test internal REST API
-├── Cloud_computing_chunin_exam.md# Panduan penugasan UTS
 └── README.md                     # Dokumentasi komprehensif proyek
 ```
 
