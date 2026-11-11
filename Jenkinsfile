@@ -109,6 +109,7 @@ pipeline {
                                 docker run -d \
                                     --name lab-inventory-backend \
                                     --network app-net \
+                                    --network-alias backend \
                                     -p 5000:5000 \
                                     -e PORT=5000 \
                                     -e DATA_PATH=/var/lib/lab-inventory-data/inventory.json \
@@ -116,9 +117,12 @@ pipeline {
                                     --restart unless-stopped \
                                     lab-inventory-backend:latest
                                     
+                                sleep 2
+                                    
                                 docker run -d \
                                     --name lab-inventory-frontend \
                                     --network app-net \
+                                    --network-alias frontend \
                                     -p 8080:80 \
                                     --restart unless-stopped \
                                     nginx:alpine
@@ -126,6 +130,7 @@ pipeline {
                                 echo "Copying frontend files into container..."
                                 docker cp index.html lab-inventory-frontend:/usr/share/nginx/html/index.html
                                 docker cp nginx.conf lab-inventory-frontend:/etc/nginx/conf.d/default.conf
+                                docker exec lab-inventory-frontend nginx -t
                                 docker exec lab-inventory-frontend nginx -s reload
                             fi
                             echo "Status kontainer aktif:"
