@@ -9,7 +9,6 @@
 ## 👥 Identitas Anggota Kelompok
 
 | No | Nama Lengkap | NIM |
-|---|---|---|---|
 | 1 | [Muhamad Ridho Aulia Algifari] | [101012300085] 
 | 2 | [Muhammad Fizhuka Ihza] | [101012330399] 
 | 3 | [Muhammad Nabil Nafis Savero] | [101012300147] 
