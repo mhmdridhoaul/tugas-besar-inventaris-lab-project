@@ -1,0 +1,12 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+README.md
+Jenkinsfile
+Cloud_computing_chunin_exam.md
+test_*.py
+test_*.json

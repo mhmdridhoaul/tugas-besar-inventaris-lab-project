@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Katalog Inventaris Alat Laboratorium | Cloud Computing</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    .pulse-badge { animation: pulse-slow 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <!-- Server/Network SVG Icon -->
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            Lab Inventory Catalog
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Case 4</span>
+          </h1>
+          <p class="text-xs text-slate-400">Cloud Computing Chunin Exam - Telkom University</p>
+        </div>
+      </div>
+
+      <!-- Backend Connection Status -->
+      <div class="flex items-center space-x-4">
+        <div id="backend-status-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300">
+          <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-yellow-400 mr-2 animate-ping"></span>
+          <span id="backend-status-text">Menghubungkan ke Backend...</span>
+        </div>
+        <button onclick="fetchInventory()" title="Muat Ulang Data" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700">
+          <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- HERO / INFO BANNER -->
+    <section class="bg-gradient-to-r from-slate-800 via-slate-850 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div class="absolute -right-8 -top-8 w-40 h-40 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-0.5 rounded-full mb-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            Docker Named Volume: <code class="font-mono text-emerald-300">lab-inventory-data</code> (Data Immunity)
+          </div>
+          <h2 class="text-2xl font-extrabold text-white">Sistem Inventaris Alat Laboratorium</h2>
+          <p class="text-sm text-slate-300 max-w-2xl leading-relaxed">
+            Pencatatan real-time ketersediaan dan peminjaman perangkat lab (Mikrotik, Modem, Kabel, Switch, Perkakas). 
+            Data persisten di Named Volume dan frontend terhubung secara asynchronous via <code class="text-amber-400 font-mono text-xs">fetch()</code>.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 font-mono">Bridge: app-net</span>
+          <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 font-mono">Web: Nginx :8080</span>
+          <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 font-mono">API: Python :5000</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS CARDS -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total Jenis Alat -->
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Jenis Alat</p>
+          <p id="stat-total-types" class="text-2xl font-bold text-white">0</p>
+        </div>
+      </div>
+
+      <!-- Total Unit Fisik -->
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Total Unit / Stok</p>
+          <p id="stat-total-units" class="text-2xl font-bold text-white">0</p>
+        </div>
+      </div>
+
+      <!-- Tersedia -->
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Kondisi Tersedia</p>
+          <p id="stat-available" class="text-2xl font-bold text-teal-400">0</p>
+        </div>
+      </div>
+
+      <!-- Dipinjam / Rusak -->
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Dipinjam / Lainnya</p>
+          <p id="stat-borrowed" class="text-2xl font-bold text-amber-400">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTENT GRID: FORM + CATALOG -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- LEFT: FORM INPUT BARANG BARU (POST /inventory) -->
+      <section class="lg:col-span-1">
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl sticky top-24">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Tambah Alat Baru
+            </h3>
+            <span class="text-xs bg-slate-700 text-slate-300 font-mono px-2 py-0.5 rounded">POST /inventory</span>
+          </div>
+
+          <form id="add-item-form" onsubmit="handleAddItem(event)" class="space-y-4">
+            <!-- Nama Alat -->
+            <div>
+              <label for="input-nama" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nama Perangkat / Alat <span class="text-rose-500">*</span></label>
+              <input type="text" id="input-nama" required placeholder="Contoh: Mikrotik RouterBoard RB750Gr3" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+            </div>
+
+            <!-- Kategori -->
+            <div>
+              <label for="input-kategori" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Kategori Alat</label>
+              <select id="input-kategori" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                <option value="Jaringan & Routing">Jaringan & Routing (Mikrotik/Router)</option>
+                <option value="Modem & Wireless">Modem & Wireless (Orbit/AP/Dongle)</option>
+                <option value="Jaringan & Switch">Switch & Hub (Cisco/TP-Link)</option>
+                <option value="Kabel & Aksesoris">Kabel & Konektor (Cat6/Patch Cord)</option>
+                <option value="Peralatan & Perkakas">Peralatan & Perkakas (Crimping/Tester)</option>
+                <option value="Server & Komputasi">Server & Komputasi (PC/Raspberry Pi)</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <!-- Jumlah & Kondisi (Grid 2 kolom) -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="input-jumlah" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Jumlah Unit <span class="text-rose-500">*</span></label>
+                <input type="number" id="input-jumlah" min="1" value="1" required 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+              </div>
+
+              <div>
+                <label for="input-kondisi" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Kondisi / Status</label>
+                <select id="input-kondisi" 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                  <option value="Tersedia">Tersedia</option>
+                  <option value="Dipinjam">Dipinjam</option>
+                  <option value="Rusak / Servis">Rusak / Servis</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Peminjam -->
+            <div>
+              <label for="input-peminjam" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Peminjam / PIC (Opsional)</label>
+              <input type="text" id="input-peminjam" placeholder="Kosongkan jika tersedia (default: -)" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+            </div>
+
+            <!-- Lokasi Rak -->
+            <div>
+              <label for="input-lokasi" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Lokasi Rak / Lemari</label>
+              <input type="text" id="input-lokasi" placeholder="Contoh: Rak A2 / Meja Lab 1" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submit-btn" 
+              class="w-full mt-2 bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg shadow-brand-500/25 transition duration-150 flex items-center justify-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span>Simpan ke Inventaris</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- RIGHT: KATALOG & DAFTAR ALAT (GET & DELETE /inventory) -->
+      <section class="lg:col-span-2 space-y-4">
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+          <div class="relative w-full sm:w-72">
+            <input type="text" id="search-input" oninput="renderTable()" placeholder="Cari nama alat / peminjam..." 
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+
+          <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <select id="filter-status" onchange="renderTable()" 
+              class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="ALL">Semua Status</option>
+              <option value="Tersedia">Tersedia</option>
+              <option value="Dipinjam">Dipinjam</option>
+              <option value="Rusak / Servis">Rusak / Servis</option>
+            </select>
+
+            <select id="filter-category" onchange="renderTable()" 
+              class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="ALL">Semua Kategori</option>
+              <option value="Jaringan & Routing">Jaringan & Routing</option>
+              <option value="Modem & Wireless">Modem & Wireless</option>
+              <option value="Jaringan & Switch">Switch & Hub</option>
+              <option value="Kabel & Aksesoris">Kabel & Aksesoris</option>
+              <option value="Peralatan & Perkakas">Peralatan</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- INVENTORY TABLE CONTAINER -->
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+          <div class="p-4 border-b border-slate-700/80 flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                Daftar Katalog Alat
+                <span id="items-badge" class="text-xs font-semibold bg-brand-500/20 text-brand-400 px-2.5 py-0.5 rounded-full border border-brand-500/30">0 Alat</span>
+              </h3>
+              <p class="text-xs text-slate-400">Endpoint terhubung: <code class="text-emerald-400">GET /inventory</code> & <code class="text-rose-400">DELETE /inventory?index=X</code></p>
+            </div>
+            <span class="text-xs text-slate-400 italic">Named Volume: lab-inventory-data</span>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700/80">
+                <tr>
+                  <th scope="col" class="py-3.5 px-4 font-semibold text-center w-12">Index</th>
+                  <th scope="col" class="py-3.5 px-4 font-semibold">Nama Alat & Lokasi</th>
+                  <th scope="col" class="py-3.5 px-4 font-semibold">Kategori</th>
+                  <th scope="col" class="py-3.5 px-4 font-semibold text-center">Unit</th>
+                  <th scope="col" class="py-3.5 px-4 font-semibold text-center">Status</th>
+                  <th scope="col" class="py-3.5 px-4 font-semibold">Peminjam</th>
+                  <th scope="col" class="py-3.5 px-4 font-semibold text-center w-24">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body" class="divide-y divide-slate-700/60">
+                <!-- Data akan di-render via JavaScript fetch() -->
+                <tr>
+                  <td colspan="7" class="py-12 text-center text-slate-400">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-slate-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Memuat data inventaris laboratorium...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm pointer-events-none"></div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800 bg-slate-900/80 py-6 mt-12 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 space-y-1">
+      <p>Inventaris Barang Laboratorium (Lab Inventory Catalog) &bull; Cloud Computing Chunin Exam</p>
+      <p>Docker Named Volume <span class="text-slate-400 font-mono">lab-inventory-data</span> &bull; Bridge Network <span class="text-slate-400 font-mono">app-net</span> &bull; Jenkins CI/CD Pipeline</p>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT LOGIC (VANILLA JS TANPA FRAMEWORK) -->
+  <script>
+    // State lokal aplikasi
+    let inventoryData = [];
+
+    // Deteksi Base URL API:
+    // 1. Jika via Nginx Docker Compose (port 80/8080): gunakan relative URL /inventory (diproxy Nginx ke backend:5000 via Docker DNS)
+    // 2. Jika dibuka langsung via host browser di port 5000: http://localhost:5000
+    // 3. Jika dibuka via file:// atau Live Server: arahkan ke http://localhost:5000
+    function getApiBaseUrl() {
+      if (window.location.protocol === 'file:' || window.location.port === '5500' || window.location.port === '3000') {
+        return 'http://localhost:5000';
+      }
+      return ''; // Relative path (diproses Nginx reverse proxy ke backend)
+    }
+
+    const API_BASE = getApiBaseUrl();
+
+    // Notifikasi Toast
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-600 text-white border-emerald-500',
+        error: 'bg-rose-600 text-white border-rose-500',
+        info: 'bg-blue-600 text-white border-blue-500'
+      };
+
+      toast.className = `${colors[type] || colors.info} border px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 text-sm transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+      toast.innerHTML = `
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' : 
+            (type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' : 
+             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>')}
+        </svg>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Update Status Badge Koneksi Backend
+    function updateBackendStatus(isOnline, text = null) {
+      const dot = document.getElementById('backend-status-dot');
+      const statusText = document.getElementById('backend-status-text');
+
+      if (isOnline) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 mr-2 pulse-badge';
+        statusText.textContent = text || 'Backend Connected';
+        statusText.className = 'text-emerald-400 font-medium';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500 mr-2 animate-ping';
+        statusText.textContent = text || 'Backend Disconnected';
+        statusText.className = 'text-rose-400 font-medium';
+      }
+    }
+
+    // 1. GET /inventory - Mengambil data inventaris dari Backend
+    async function fetchInventory() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      try {
+        const response = await fetch(`${API_BASE}/inventory`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+        }
+
+        const json = await response.json();
+        inventoryData = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+        
+        updateBackendStatus(true, `Backend Terhubung (${inventoryData.length} item)`);
+        renderTable();
+        updateStats();
+      } catch (err) {
+        console.error('Gagal mengambil data inventaris:', err);
+        updateBackendStatus(false, 'Gagal terhubung ke Backend');
+        renderErrorState(err.message);
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    // 2. POST /inventory - Menambah alat baru ke inventaris
+    async function handleAddItem(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        Menyimpan...
+      `;
+
+      const nama = document.getElementById('input-nama').value.trim();
+      const kategori = document.getElementById('input-kategori').value;
+      const jumlah = parseInt(document.getElementById('input-jumlah').value) || 1;
+      const kondisi = document.getElementById('input-kondisi').value;
+      const peminjam = document.getElementById('input-peminjam').value.trim() || '-';
+      const lokasi = document.getElementById('input-lokasi').value.trim() || 'Lab Utama';
+
+      const payload = {
+        nama_alat: nama,
+        kategori: kategori,
+        jumlah: jumlah,
+        kondisi: kondisi,
+        peminjam: peminjam,
+        lokasi_rak: lokasi
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/inventory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          showToast(`Berhasil menambahkan: ${nama}`, 'success');
+          // Reset form input
+          document.getElementById('add-item-form').reset();
+          document.getElementById('input-jumlah').value = "1";
+          // Re-fetch data real-time
+          await fetchInventory();
+        } else {
+          showToast(`Gagal: ${result.error || 'Terjadi kesalahan input'}`, 'error');
+        }
+      } catch (err) {
+        console.error('Error saat POST /inventory:', err);
+        showToast('Koneksi ke backend gagal saat menambah data.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>Simpan ke Inventaris</span>
+        `;
+      }
+    }
+
+    // 3. DELETE /inventory?index=X - Menghapus alat berdasarkan index array
+    async function deleteItem(index, namaAlat) {
+      const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus "${namaAlat}" (Index ${index}) dari inventaris?`);
+      if (!confirmDelete) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/inventory?index=${index}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          showToast(`Item "${namaAlat}" berhasil dihapus.`, 'success');
+          await fetchInventory();
+        } else {
+          showToast(`Gagal menghapus: ${result.error || 'Index tidak ditemukan'}`, 'error');
+        }
+      } catch (err) {
+        console.error('Error saat DELETE /inventory:', err);
+        showToast('Gagal menghubungi backend untuk menghapus item.', 'error');
+      }
+    }
+
+    // Update Statistik Cards
+    function updateStats() {
+      const totalTypes = inventoryData.length;
+      let totalUnits = 0;
+      let availableCount = 0;
+      let borrowedCount = 0;
+
+      inventoryData.forEach(item => {
+        const qty = parseInt(item.jumlah) || 0;
+        totalUnits += qty;
+        if (item.kondisi === 'Tersedia') {
+          availableCount += qty;
+        } else {
+          borrowedCount += qty;
+        }
+      });
+
+      document.getElementById('stat-total-types').textContent = totalTypes;
+      document.getElementById('stat-total-units').textContent = totalUnits;
+      document.getElementById('stat-available').textContent = availableCount;
+      document.getElementById('stat-borrowed').textContent = borrowedCount;
+      document.getElementById('items-badge').textContent = `${totalTypes} Alat Terdaftar`;
+    }
+
+    // Render Tabel Inventaris
+    function renderTable() {
+      const tbody = document.getElementById('inventory-table-body');
+      const searchQuery = (document.getElementById('search-input')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
+      const categoryFilter = document.getElementById('filter-category')?.value || 'ALL';
+
+      // Filter data sesuai kriteria pencarian
+      const filtered = inventoryData.map((item, originalIndex) => ({ ...item, originalIndex }))
+        .filter(item => {
+          const matchSearch = 
+            (item.nama_alat || '').toLowerCase().includes(searchQuery) ||
+            (item.kategori || '').toLowerCase().includes(searchQuery) ||
+            (item.peminjam || '').toLowerCase().includes(searchQuery) ||
+            (item.lokasi_rak || '').toLowerCase().includes(searchQuery);
+
+          const matchStatus = (statusFilter === 'ALL') || (item.kondisi === statusFilter);
+          const matchCategory = (categoryFilter === 'ALL') || (item.kategori === categoryFilter);
+
+          return matchSearch && matchStatus && matchCategory;
+        });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-12 text-center text-slate-400">
+              <svg class="w-12 h-12 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+              <p class="font-medium text-slate-300">Tidak ada alat laboratorium yang cocok</p>
+              <p class="text-xs text-slate-500 mt-1">Gunakan formulir di sebelah kiri untuk menambah alat baru.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        // Badge Kondisi
+        let statusBadge = '';
+        if (item.kondisi === 'Tersedia') {
+          statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Tersedia</span>';
+        } else if (item.kondisi === 'Dipinjam') {
+          statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">Dipinjam</span>';
+        } else {
+          statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/20 text-rose-400 border border-rose-500/30">Rusak / Servis</span>';
+        }
+
+        // Escape XSS strings
+        const safeNama = escapeHtml(item.nama_alat || '-');
+        const safeKategori = escapeHtml(item.kategori || 'Umum');
+        const safeLokasi = escapeHtml(item.lokasi_rak || 'Lab');
+        const safePeminjam = escapeHtml(item.peminjam || '-');
+        const originalIndex = item.originalIndex;
+
+        return `
+          <tr class="hover:bg-slate-700/40 transition duration-150 group">
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-400">
+              <span class="bg-slate-900 px-2 py-1 rounded border border-slate-700">${originalIndex}</span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-white">${safeNama}</div>
+              <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                ${safeLokasi}
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700/80">
+                ${safeKategori}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center font-bold text-slate-100">
+              ${item.jumlah}
+            </td>
+            <td class="py-3 px-4 text-center">
+              ${statusBadge}
+            </td>
+            <td class="py-3 px-4 text-xs ${item.peminjam && item.peminjam !== '-' ? 'text-amber-300 font-medium' : 'text-slate-400'}">
+              ${safePeminjam}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="deleteItem(${originalIndex}, '${safeNama}')" 
+                title="Hapus dari inventaris"
+                class="inline-flex items-center justify-center p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render pesan error pada tabel
+    function renderErrorState(errorMessage) {
+      const tbody = document.getElementById('inventory-table-body');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="py-12 text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mb-3 border border-rose-500/30">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <p class="font-semibold text-rose-400 text-base">Gagal Menghubungi Backend</p>
+            <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Pastikan kontainer backend aktif dan jaringan Docker <code class="text-emerald-400 font-mono">app-net</code> berjalan.</p>
+            <button onclick="fetchInventory()" class="mt-4 px-4 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs text-white rounded-lg transition font-medium">
+              Coba Lagi
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    // Helper XSS Protection
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Inisialisasi saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchInventory();
+    });
+  </script>
+</body>
+</html>
