@@ -120,10 +120,13 @@ pipeline {
                                     --name lab-inventory-frontend \
                                     --network app-net \
                                     -p 8080:80 \
-                                    -v "$PWD/index.html:/usr/share/nginx/html/index.html:ro" \
-                                    -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
                                     --restart unless-stopped \
                                     nginx:alpine
+                                    
+                                echo "Copying frontend files into container..."
+                                docker cp index.html lab-inventory-frontend:/usr/share/nginx/html/index.html
+                                docker cp nginx.conf lab-inventory-frontend:/etc/nginx/conf.d/default.conf
+                                docker exec lab-inventory-frontend nginx -s reload
                             fi
                             echo "Status kontainer aktif:"
                             docker ps
@@ -162,8 +165,10 @@ pipeline {
                                 echo "\\nHealth check via host.docker.internal:8080 SUCCESS!"
                             elif curl -s -f http://localhost:5000/health; then
                                 echo "\\nHealth check via localhost:5000 SUCCESS!"
+                            elif docker exec lab-inventory-frontend wget -qO- http://127.0.0.1/health; then
+                                echo "\\nHealth check via frontend reverse proxy SUCCESS!"
                             elif docker exec lab-inventory-backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:5000/health').read().decode())"; then
-                                echo "\\nHealth check via docker exec SUCCESS!"
+                                echo "\\nHealth check via backend docker exec SUCCESS!"
                             else
                                 echo "Health check FAILED!"
                                 exit 1
